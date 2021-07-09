@@ -14,6 +14,7 @@
 #include <fstream>
 #include <sstream>
 #include <time.h>
+#include <direct.h>
 
 #include "playgame.hpp"
 #include "helpers.hpp"
