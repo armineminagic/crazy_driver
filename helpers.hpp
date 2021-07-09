@@ -417,3 +417,29 @@ string trim(const string& str, const string& whitespace = " \t")
 
     return str.substr(strBegin, strRange);
 }
+
+void CreateCustomEllipse(HDC hdc, RECT obstacle){
+    Ellipse(hdc, obstacle.left, obstacle.top, obstacle.right, obstacle.bottom);
+}
+
+int game_over(HWND hwnd, RECT &mainPlayerPos, RECT &obstacle, RECT playerPos){
+    if (mainPlayerPos.right > obstacle.left && mainPlayerPos.left < obstacle.right && do_rectangles_overlap(mainPlayerPos, obstacle)){
+        KillTimer(hwnd, 1);
+
+        MessageBox(hwnd, TEXT("Try Again?"), TEXT("Game Over"), MB_OK);
+
+        SetTimer(hwnd, 1, 50, NULL);
+
+        mainPlayerPos = playerPos;
+
+        while(do_rectangles_overlap(playerPos, obstacle)){
+            obstacle.left -= 4500;
+            obstacle.right -= 4500;
+        }
+
+        InvalidateRect(hwnd, NULL, false);
+        UpdateWindow(hwnd);
+        return 1;
+    }
+    return 0;
+}
