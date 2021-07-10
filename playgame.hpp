@@ -223,5 +223,31 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
             return 0;
         }
 
+        case WM_TIMER: {
+            
+            for (int i = 0; i < sizeof(Obstacles)/sizeof(Obstacles[0]); ++i) {
+                if (ObstaclesInfo[i][O_TYPE] == 3)
+                    continue;
+
+                if (ObstaclesInfo[i][O_TYPE] == 1)
+                    moveUpAndDown(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], i, Obstacles, ObstaclesInfo);
+                
+                else if (ObstaclesInfo[i][O_TYPE] == 2)
+                    moveInCircle(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], ObstaclesInfo[i][O_RADIUS], i, Obstacles, ObstaclesInfo);
+
+                else if (ObstaclesInfo[i][O_TYPE] == 3)
+                    moveBounceOnWalls(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], i, Obstacles, ObstaclesInfo);
+                
+                else if (ObstaclesInfo[i][O_TYPE] == 4)
+                    followThePlayer(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP]);
+                
+                else if (ObstaclesInfo[i][O_TYPE] == 5)
+                    moveRightAndLeft(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], i, Obstacles, ObstaclesInfo);
+            }
+
+            InvalidateRect(hwnd, NULL, false);
+            UpdateWindow(hwnd);
+        }
+
     }
 }

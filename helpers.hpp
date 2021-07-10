@@ -414,6 +414,38 @@ int moveBounceOnWalls(RECT &Rect, RECT border, int step, int id, RECT Obstacles[
     return 1;
 }
 
+void followThePlayer(RECT &Obstacle, RECT currPlayerPos, RECT gameBox, long step) {
+    double dx = currPlayerPos.right - Obstacle.right;
+    double dy = currPlayerPos.bottom - Obstacle.bottom;
+
+    double angle = atan2(dy, dx);
+
+    currPlayerPos.left += (long)(step * cos(angle));
+    currPlayerPos.right += (long)(step * cos(angle));
+    currPlayerPos.top += (long)(step * sin(angle));
+    currPlayerPos.bottom += (long)(step * sin(angle));
+
+    if (currPlayerPos.top < gameBox.top) {
+        currPlayerPos.bottom += gameBox.top - currPlayerPos.top;
+        currPlayerPos.top = gameBox.top;
+    }
+
+    if (currPlayerPos.bottom > gameBox.bottom) {
+        currPlayerPos.top -= currPlayerPos.bottom -gameBox.bottom;
+        currPlayerPos.bottom = gameBox.bottom;
+    }
+
+    if (currPlayerPos.right > gameBox.right) {
+        currPlayerPos.left -= currPlayerPos.right - gameBox.right;
+        currPlayerPos.right = gameBox.right;
+    }
+
+    if (currPlayerPos.left < gameBox.left) {
+        currPlayerPos.right += gameBox.left - currPlayerPos.left;
+        currPlayerPOs.left = gameBox.left; 
+    }
+}
+
 // Helper for creating custom ellipse obstacle
 void CreateCustomEllipse(HDC hdc, RECT obstacle){
     Ellipse(hdc, obstacle.left, obstacle.top, obstacle.right, obstacle.bottom);
