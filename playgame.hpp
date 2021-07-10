@@ -30,8 +30,9 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
     RECT client = {};
 
     static RECT gameBox = {};
-    static RECT playerPos = {};
-    static RECT mainPlayerPos = {};
+    static RECT playerPos = {}; // Initial player position
+    static RECT mainPlayerPos = {}; // Current player position
+    static RECT previousPos = {}; // Prevous player position
 
     static RECT Gate = {};
     static int GateInfo[2] = {};
@@ -48,6 +49,9 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
 
     static int margins[] = {30, 35, 80, 35};
     static int width, height;
+
+    static int step = 10;
+    int key_control = 0;
 
     static int Level = 1;
     static int PreviousLevel = 1;
@@ -169,5 +173,55 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
             
             return 0;
         }
+        
+        case WM_KEYDOWN: {
+            previousPos = mainPlayerPos;
+
+            PlayerMove(mainPlayerPos, gameBox, step, key_control);
+
+            if (wParam == VK_ESCAPE){
+                mainPlayerPos = playerPos;
+                key_control = 5;
+                Deaths++;
+            }
+
+            for(int i = 0; i < sizeof(Obstacles)/sizeof(Obstacles[0]); ++i){
+                if(ObstaclesInfo[i][O_TYPE] == 3){
+                    wallPassed(mainPlayerPos, Obstacles[i], key_control-1, previousPos);
+                }
+            }
+
+            if (key_control) {
+                InvalidateRect(hwnd, NULL, false);
+                UpdateWindow(hwnd);
+            }
+
+            if (mainPlayerPos.right > Gate.left &&  rectanglesOverlap(Gate, mainPlayerPos)) {
+                KillTimer(hwnd, 1);;
+
+                MessageBox(hwnd, TEXT("You won!"), TEXT("Congrats!"), MB_OK);
+                
+                char tmpText[100];
+                sprintf_s(tmpText, "./LEVELS/level%d.txt", Level + 1);
+                
+                if (fileExists(tmpText)) {
+                    generateGate(margins[2], Gate, GateInfo, gameBox);
+
+                    SetTimer(hwnd, 1, 50, NULL);
+
+                    mainPlayerPos = playerPos;
+
+                    Level++;
+
+                    generateObstacles(Obstacles, ObstaclesInfo, Level, margins, playerPos);
+                } 
+
+                InvalidateRect(hwnd, NULL, false);
+                UpdateWindow(hwnd);
+            }
+
+            return 0;
+        }
+
     }
 }

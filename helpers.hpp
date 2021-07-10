@@ -5,12 +5,70 @@ using namespace std;
 #define O_STEP 2
 #define O_RADIUS 3 // radius
 
+// Helper for random numbers
 int GetRandomNumber(int nLow, int nHigh)
 {	
 	srand((unsigned)time(NULL));
     return (rand() % (nHigh - nLow + 1)) + nLow;
 }
 
+//Player moving functions
+void PlayerMove(RECT &curPostion, RECT gameBox, int step, int &key_ctrl){
+    if (GetAsyncKeyState(VK_LEFT) && !outOfGameBox(curPostion, gameBox, 0, step)){
+        curPostion.left -= step;
+        curPostion.right -= step;
+        key_ctrl = 1;
+    }
+
+    if (GetAsyncKeyState(VK_RIGHT) && !outOfGameBox(curPostion, gameBox, 1, step)){
+        curPostion.left += step;
+        curPostion.right += step;
+        key_ctrl = 2;
+    }
+
+    if (GetAsyncKeyState(VK_UP) && !outOfGameBox(curPostion, gameBox, 2, step)){
+        curPostion.top -= step;
+        curPostion.bottom -= step;
+        key_ctrl = 3;
+    }
+
+    if (GetAsyncKeyState(VK_DOWN) && !outOfGameBox(curPostion, gameBox, 3, step)){
+        curPostion.top += step;
+        curPostion.bottom += step;
+        key_ctrl = 4;
+    }
+}
+
+void wallPassed(RECT &curPosition, RECT Obstacle, int dir, RECT pos){
+    if (rectanglesOverlap(curPosition, Obstacle)){
+        if((dir == 3 || dir == 2) && (pos.right <= Obstacle.left))
+            dir = 1;
+        if ((dir == 3 || dir == 2) && (pos.left >= Obstacle.right))
+            dir = 0;
+
+        if (dir == 0 && curPosition.left < Obstacle.right) {
+            curPosition.right += Obstacle.right - curPosition.left;
+            curPosition.left = Obstacle.right;
+        }
+
+        if (dir == 1 && curPosition.right > Obstacle.left) {
+            curPosition.left -= curPosition.right - Obstacle.left;
+            curPosition.right = Obstacle.left;
+        }
+
+        if (dir == 2 && curPosition.top < Obstacle.bottom) {
+            curPosition.bottom += Obstacle.bottom - curPosition.top;
+            curPosition.top = Obstacle.bottom;
+        }
+
+        if (dir == 3 && curPosition.bottom > Obstacle.top) {
+            curPosition.top -= curPosition.bottom - Obstacle.top;
+            curPosition.bottom = Obstacle.top;
+        }
+    }
+}
+
+// Generating Obstacles
 void generateGate(int margin, RECT &Gate, int GateInfo[],  RECT GameBox){
     
     Gate.top = GetRandomNumber(margin, GameBox.bottom);
@@ -95,7 +153,7 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
 			ObstaclesInfo[i][O_MOVE] = strtodbl(trim(objInfo[4]));	
 		}
 
-        while(do_rectangles_overlap(playerPos, Obstacles[i])) {
+        while(rectanglesOverlap(playerPos, Obstacles[i])) {
 			Obstacles[i].left += (long)(45 + extra);
 			Obstacles[i].right += (long)(45 + extra);
 
@@ -113,6 +171,7 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
     }
 }
 
+// Obstacles moving funcitons
 int moveUpAndDown(RECT &Rect, RECT border, int step, int id, RECT Obstacles[], double ObstaclesInfo[][100], int reset = 0){
     static double info[100];
     if(reset){
@@ -132,7 +191,7 @@ int moveUpAndDown(RECT &Rect, RECT border, int step, int id, RECT Obstacles[], d
     }
 
     for (int i = 0; i < 100; ++i){
-        if(ObstaclesInfo[i][O_TYPE] == 3 && do_rectangles_overlap(Rect, Obstacles[i])){
+        if(ObstaclesInfo[i][O_TYPE] == 3 && rectanglesOverlap(Rect, Obstacles[i])){
             if(!info[id]){
                 Rect.top = Obstacles[i].top - (Rect.bottom -Rect.top);
                 Rect.bottom = Obstacles[i].top;
@@ -167,7 +226,7 @@ int moveRightAndLeft(RECT &Rect, RECT border, int step, int id, RECT Obstacles[]
     }
 
     for(int i = 0; i < 100; ++i){
-        if(ObstaclesInfo[i][O_TYPE] == 3 && do_rectangles_overlap(Rect, Obstacles[i])){
+        if(ObstaclesInfo[i][O_TYPE] == 3 && rectanglesOverlap(Rect, Obstacles[i])){
             if (!info[id]) {
                 Rect.right = Obstacles[i].left;
                 Rect.left = Obstacles[i].left - (Rect.right - Rect.left);
@@ -238,7 +297,7 @@ int moveInCircle(RECT &Rect, RECT border, double step, double radius, int id, RE
     int h = Rect.bottom - Rect.top, w = Rect.right - Rect.left;
 
     for(int i = 0; i < 100; ++i){
-        if(ObstaclesInfo[i][O_TYPE] == 3 && do_rectangles_overlap(Rect, Obstacles[i])) {
+        if(ObstaclesInfo[i][O_TYPE] == 3 && rectanglesOverlap(Rect, Obstacles[i])) {
 			info[id][5] = !info[id][5];
 			// RL
 			if( prev.left >= Obstacles[i].right ) {
@@ -324,7 +383,7 @@ int moveBounceOnWalls(RECT &Rect, RECT border, int step, int id, RECT Obstacles[
 	}
 
     for(int i = 0; i < 100; ++i){
-        if(ObstaclesInfo[i][O_TYPE] == 3 && do_rectangles_overlap(Rect, Obstacles[i])) {
+        if(ObstaclesInfo[i][O_TYPE] == 3 && rectanglesOverlap(Rect, Obstacles[i])) {
 			// RL
 			if( prev.left >= Obstacles[i].right ) {
 				info[id][0] = 1;
@@ -355,12 +414,44 @@ int moveBounceOnWalls(RECT &Rect, RECT border, int step, int id, RECT Obstacles[
     return 1;
 }
 
-int do_rectangles_overlap(RECT a, RECT b){
+// Helper for creating custom ellipse obstacle
+void CreateCustomEllipse(HDC hdc, RECT obstacle){
+    Ellipse(hdc, obstacle.left, obstacle.top, obstacle.right, obstacle.bottom);
+}
+
+// Check if rectangles overlapping with each other
+int rectanglesOverlap(RECT a, RECT b){
     if(a.left >= b.right || a.right <= b.left || a.top >= b.bottom || a.bottom <= b.top)
         return 0;
     return 1;
 }
 
+// Check if player goes out of game box window
+bool outOfGameBox(RECT &curPlayerPos, RECT gameBox, int direction, int step){
+    if (direction == 0 && (curPlayerPos.left - step < gameBox.left)){
+        curPlayerPos.right = gameBox.left + (curPlayerPos.right - curPlayerPos.left);
+        curPlayerPos.left = gameBox.left;
+        return true;
+    }
+    else if (direction == 1 && (curPlayerPos.right + step > gameBox.right)){
+        curPlayerPos.left = gameBox.right - (curPlayerPos.right - curPlayerPos.left);
+        curPlayerPos.right = gameBox.right;
+        return true;
+    }
+    else if (direction == 2 && (curPlayerPos.top - step < gameBox.top)){
+        curPlayerPos.bottom = gameBox.top + (curPlayerPos.bottom - curPlayerPos.top);
+        curPlayerPos.top = gameBox.top;
+        return true;
+    }
+    else if (direction == 3 && (curPlayerPos.bottom + step > gameBox.bottom)){
+        curPlayerPos.top = gameBox.bottom - (curPlayerPos.bottom - curPlayerPos.top);
+        curPlayerPos.bottom = gameBox.bottom;
+        return true;
+    }
+    return false;
+}
+
+// Files manipulation
 BOOL directoryExists(const std::string& dir_name){
     DWORD file_attr = GetFileAttributesA(dir_name.c_str());
     if (file_attr == INVALID_FILE_ATTRIBUTES)
@@ -378,10 +469,7 @@ BOOL fileExists(LPCTSTR path){
 
 }
 
-double strtodbl(string String) { 
-	return ::atof(String.c_str());
-}
-
+// String manipulation
 vector <string> splitString(const string& str, const char& ch) {
     string next;
     vector<string> result;
@@ -418,12 +506,13 @@ string trim(const string& str, const string& whitespace = " \t")
     return str.substr(strBegin, strRange);
 }
 
-void CreateCustomEllipse(HDC hdc, RECT obstacle){
-    Ellipse(hdc, obstacle.left, obstacle.top, obstacle.right, obstacle.bottom);
+double strtodbl(string String) { 
+	return ::atof(String.c_str());
 }
 
+// Game flow
 int game_over(HWND hwnd, RECT &mainPlayerPos, RECT &obstacle, RECT playerPos){
-    if (mainPlayerPos.right > obstacle.left && mainPlayerPos.left < obstacle.right && do_rectangles_overlap(mainPlayerPos, obstacle)){
+    if (mainPlayerPos.right > obstacle.left && mainPlayerPos.left < obstacle.right && rectanglesOverlap(mainPlayerPos, obstacle)){
         KillTimer(hwnd, 1);
 
         MessageBox(hwnd, TEXT("Try Again?"), TEXT("Game Over"), MB_OK);
@@ -432,7 +521,7 @@ int game_over(HWND hwnd, RECT &mainPlayerPos, RECT &obstacle, RECT playerPos){
 
         mainPlayerPos = playerPos;
 
-        while(do_rectangles_overlap(playerPos, obstacle)){
+        while(rectanglesOverlap(playerPos, obstacle)){
             obstacle.left -= 4500;
             obstacle.right -= 4500;
         }
