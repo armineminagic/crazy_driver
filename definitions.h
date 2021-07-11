@@ -1,0 +1,3 @@
+#define BTN_BACK 101
+#define BTN_LOGIN 102
+#define BTN_SBOARD 103
