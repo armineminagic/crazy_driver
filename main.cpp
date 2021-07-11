@@ -4,23 +4,27 @@
     #define UNICODE
 #endif
 
-#include <tchar.h>
-#include <windows.h>
-#include <stdlib.h>
+using namespace std;
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <tchar.h>
 #include <math.h>
-#include <algorithm>
 #include <vector>
 #include <fstream>
-#include <sstream>
+
 #include <time.h>
 #include <direct.h>
 
 #include "playgame.hpp"
-#include "helpers.hpp"
 
 #define WINDOW_WIDTH 840
 #define WINDOW_HEIGHT 480
+
+// #define BTN_BACK 101
+#define BTN_LOGIN 102
+#define BTN_SBOARD 103
 
 // =============================================================================================================
 // SQLLITE  db HANDLER  *********************************************************************************
@@ -38,7 +42,7 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
                      int nCmdShow)
 {
     // =============================================================================================================
-    //INITIALIZATION SQL HANDLER 
+    //INITIALIZATION SQL HANDLER
     // =============================================================================================================
 
 
@@ -66,8 +70,8 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
     /* Register the window class, and if it fails quit the program */
     if (!RegisterClassEx (&wincl))
         return 0;
-    
-    
+
+
     RECT rect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
     AdjustWindowRect( &rect, WS_OVERLAPPEDWINDOW, FALSE );
 
@@ -111,18 +115,18 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
 LRESULT CALLBACK WindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 
-	static int CONTROL_VARIABLE = 0; // 0 -> Login(), 1 -> PlayGame(), 2 -> ScoreBoard() 
-	
-    static int id = 0; // USER_ID from database 
+	static int CONTROL_VARIABLE = 1; // 0 -> Login(), 1 -> PlayGame(), 2 -> ScoreBoard()
+
+    static int id = 0; // USER_ID from database
 
     if(CONTROL_VARIABLE == 1) {
         if (id == 0)
         return DefWindowProc (hwnd, message, wParam, lParam);
-        //  PlayGame(hwnd, message, wParam, lParam, CONTROL_VARIABLE, &db, id, level, nod); (Buttons: END) 
-	} else if (CONTROL_VARIABLE == 2) { 
+        PlayGame(hwnd, message, wParam, lParam, CONTROL_VARIABLE/*, &db, id, level, nod */); //(Buttons: END)
+	} //else if (CONTROL_VARIABLE == 2) {
         //  ScoreBoard(hwnd, message, wParam, lParam, CONTROL_VARIABLE,db); (Buttons: BACK)
-    } else
+    //} else
         //  id = Login(hwnd, message, wParam, lParam, CONTROL_VARIABLE, db); (Buttons: LOG_IN, SCORE_BOARD)
-	
+
     return DefWindowProc (hwnd, message, wParam, lParam);
 }

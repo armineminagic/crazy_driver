@@ -1,27 +1,20 @@
-// buttons
-#define BTN_END_TEXT "End"
-#define BTN_END 100
+#ifndef _PLAYGAME_HPP_
+#define _PLAYGAME_HPP_
 
-#define LVL_TEXT "\n\n\n        Current Level: %d"
-#define NOD_TEXT "\n\n\nNumber of deaths: %     "
-
-#define GRACEFUL_MSG "You reach the end of the game, congrats!"
-
-TCHAR CURRENT_DIR_PATH[MAX_PATH] = {0};
-
+#include "helpers.hpp"
 
 struct Player {
-    int width; 
+    int width;
     int height;
 
-    Player(int w, int h){ 
+    Player(int w, int h){
         width = w;
         height = h;
-    }  
+    }
 };
 
 int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*, sqldb &, const int id, const int level, const int nod)*/){
-    
+
     HDC hdc;
     static HDC hdcBuffer = {};
 
@@ -36,7 +29,7 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
 
     static RECT Gate = {};
     static int GateInfo[2] = {};
-    
+
     static RECT Obstacles[100] = {};
     static double ObstaclesInfo[100][100] = {};
 
@@ -59,16 +52,16 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
     static int PreviousDeaths = 0;
     static int Deaths = 0;
 
-    static int TheEnd = 0;    
+    static int TheEnd = 0;
 
     switch (message){
         case WM_CREATE: {
-            
+
             if(!CURRENT_DIR_PATH[0])
                 GetCurrentDirectory(MAX_PATH, CURRENT_DIR_PATH);
 
             GetClientRect(hwnd, &client);
-            
+
             BUTTONS[0] = CreateWindow(TEXT("button"), TEXT(BTN_END_TEXT), WS_VISIBLE | WS_CHILD,  client.right - margins[1], client.bottom - margins[3], margins[2], 25, hwnd, (HMENU)BTN_END, NULL, NULL);
 
             width = client.right;
@@ -81,7 +74,7 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
             static HBITMAP hbitmap = CreateCompatibleBitmap(hdc, width, height);
 
             SelectObject(hdcBuffer, hbitmap);
-            
+
             // Postition of the player widnow
             gameBox.right = client.right - margins[1];
             gameBox.left = client.left + margins[0];
@@ -113,7 +106,7 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
             BitBlt(hdcBuffer, 0, 0, width, height, NULL, NULL, NULL, WHITENESS);
 
             if (!TheEnd){
-                
+
                 DrawText(hdcBuffer, "CRAZY DRIVER", -1, &client, DT_CENTER);
                 DrawText(hdcBuffer, "Get out trough the green door", -1, &client, DT_CENTER);
 
@@ -161,7 +154,7 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
                         break;
                     }
                 }
-            } else { 
+            } else {
                 DrawText(hdcBuffer, TEXT(GRACEFUL_MSG), -1, &client, DT_CENTER);
 
                 BitBlt(hdc, 0, 0, width, height, hdcBuffer, 0, 0, SRCCOPY);
@@ -170,10 +163,10 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
                 ReleaseDC(hwnd, hdc);
                 ReleaseDC(hwnd, hdcBuffer);
             }
-            
+
             return 0;
         }
-        
+
         case WM_KEYDOWN: {
             previousPos = mainPlayerPos;
 
@@ -200,10 +193,10 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
                 KillTimer(hwnd, 1);;
 
                 MessageBox(hwnd, TEXT("You won!"), TEXT("Congrats!"), MB_OK);
-                
+
                 char tmpText[100];
                 sprintf_s(tmpText, "./LEVELS/level%d.txt", Level + 1);
-                
+
                 if (fileExists(tmpText)) {
                     generateGate(margins[2], Gate, GateInfo, gameBox);
 
@@ -214,7 +207,7 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
                     Level++;
 
                     generateObstacles(Obstacles, ObstaclesInfo, Level, margins, playerPos);
-                } 
+                }
 
                 InvalidateRect(hwnd, NULL, false);
                 UpdateWindow(hwnd);
@@ -224,23 +217,23 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
         }
 
         case WM_TIMER: {
-            
+
             for (int i = 0; i < sizeof(Obstacles)/sizeof(Obstacles[0]); ++i) {
                 if (ObstaclesInfo[i][O_TYPE] == 3)
                     continue;
 
                 if (ObstaclesInfo[i][O_TYPE] == 1)
                     moveUpAndDown(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], i, Obstacles, ObstaclesInfo);
-                
+
                 else if (ObstaclesInfo[i][O_TYPE] == 2)
                     moveInCircle(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], ObstaclesInfo[i][O_RADIUS], i, Obstacles, ObstaclesInfo);
 
                 else if (ObstaclesInfo[i][O_TYPE] == 3)
                     moveBounceOnWalls(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], i, Obstacles, ObstaclesInfo);
-                
+
                 else if (ObstaclesInfo[i][O_TYPE] == 4)
-                    followThePlayer(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP]);
-                
+                    followThePlayer(Obstacles[i], mainPlayerPos, gameBox, (long)ObstaclesInfo[i][O_STEP]);
+
                 else if (ObstaclesInfo[i][O_TYPE] == 5)
                     moveRightAndLeft(Obstacles[i], gameBox, (long)ObstaclesInfo[i][O_STEP], i, Obstacles, ObstaclesInfo);
             }
@@ -249,5 +242,19 @@ int PlayGame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &ctrl /*
             UpdateWindow(hwnd);
         }
 
+        // case WM_COMMAND: {
+
+        //     switch(wParam) {
+        //         case
+        //     }
+        // }
+
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
     }
+    return 0;
 }
+
+
+#endif

@@ -1,13 +1,48 @@
-using namespace std;
+#ifndef _HELPERS_HPP_
+#define _HELPERS_HPP_
 
+// buttons
+#define BTN_END_TEXT "End"
+#define BTN_END 100
+
+// Text messages
+#define LVL_TEXT "\n\n\n        Current Level: %d"
+#define NOD_TEXT "\n\n\nNumber of deaths: %     "
+
+#define GRACEFUL_MSG "You reach the end of the game, congrats!"
+
+// Obstacles parameters
 #define O_MOVE 0 // obstacle move
 #define O_TYPE 1 // obstacle type
 #define O_STEP 2
 #define O_RADIUS 3 // radius
 
+TCHAR CURRENT_DIR_PATH[MAX_PATH] = {0};
+
+int GetRandomNumber(int, int);
+void PlayerMove(RECT&, RECT, int, int&);
+void wallPassed(RECT &, RECT, int, RECT);
+void generateGate(int, RECT &, int,  RECT);
+void generateObstacles(RECT , double, int, int, RECT);
+int moveUpAndDown(RECT &, RECT , int, int, RECT*, double ObstaclesInfo[][100], int);
+int moveRightAndLeft(RECT &, RECT, int, int, RECT*, double ObstaclesInfo[][100], int);
+int moveInCircle(RECT &, RECT, double, double, int, RECT*, double ObstaclesInfo[][100], int);
+int moveBounceOnWalls(RECT &, RECT, int, int, RECT*, double ObstaclesInfo[][100], int);
+void followThePlayer(RECT &, RECT, RECT, long);
+void CreateCustomEllipse(HDC, RECT);
+int rectanglesOverlap(RECT, RECT);
+bool outOfGameBox(RECT &, RECT, int, int);
+BOOL directoryExists(const std::string&);
+BOOL fileExists(LPCTSTR);
+vector <string> splitString(const string&, const char&);
+string trim(const string&, const string& whitespace = " \t");
+double strtodbl(string);
+int game_over(HWND, RECT &, RECT &, RECT);
+
+
 // Helper for random numbers
 int GetRandomNumber(int nLow, int nHigh)
-{	
+{
 	srand((unsigned)time(NULL));
     return (rand() % (nHigh - nLow + 1)) + nLow;
 }
@@ -39,38 +74,38 @@ void PlayerMove(RECT &curPostion, RECT gameBox, int step, int &key_ctrl){
     }
 }
 
-void wallPassed(RECT &curPosition, RECT Obstacle, int dir, RECT pos){
-    if (rectanglesOverlap(curPosition, Obstacle)){
+void wallPassed(RECT &currPosition, RECT Obstacle, int dir, RECT pos) {
+    if (rectanglesOverlap(currPosition, Obstacle)){
         if((dir == 3 || dir == 2) && (pos.right <= Obstacle.left))
             dir = 1;
         if ((dir == 3 || dir == 2) && (pos.left >= Obstacle.right))
             dir = 0;
 
-        if (dir == 0 && curPosition.left < Obstacle.right) {
-            curPosition.right += Obstacle.right - curPosition.left;
-            curPosition.left = Obstacle.right;
+        if (dir == 0 && currPosition.left < Obstacle.right) {
+            currPosition.right += Obstacle.right - currPosition.left;
+            currPosition.left = Obstacle.right;
         }
 
-        if (dir == 1 && curPosition.right > Obstacle.left) {
-            curPosition.left -= curPosition.right - Obstacle.left;
-            curPosition.right = Obstacle.left;
+        if (dir == 1 && currPosition.right > Obstacle.left) {
+            currPosition.left -= currPosition.right - Obstacle.left;
+            currPosition.right = Obstacle.left;
         }
 
-        if (dir == 2 && curPosition.top < Obstacle.bottom) {
-            curPosition.bottom += Obstacle.bottom - curPosition.top;
-            curPosition.top = Obstacle.bottom;
+        if (dir == 2 && currPosition.top < Obstacle.bottom) {
+            currPosition.bottom += Obstacle.bottom - currPosition.top;
+            currPosition.top = Obstacle.bottom;
         }
 
-        if (dir == 3 && curPosition.bottom > Obstacle.top) {
-            curPosition.top -= curPosition.bottom - Obstacle.top;
-            curPosition.bottom = Obstacle.top;
+        if (dir == 3 && currPosition.bottom > Obstacle.top) {
+            currPosition.top -= currPosition.bottom - Obstacle.top;
+            currPosition.bottom = Obstacle.top;
         }
     }
 }
 
 // Generating Obstacles
 void generateGate(int margin, RECT &Gate, int GateInfo[],  RECT GameBox){
-    
+
     Gate.top = GetRandomNumber(margin, GameBox.bottom);
     Gate.left = GameBox.right - GateInfo[0];
     Gate.right = GameBox.right;
@@ -92,8 +127,8 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
 
     moveUpAndDown(Obstacles[0], Obstacles[0], 1, 1, Obstacles, ObstaclesInfo, 1);
     moveRightAndLeft(Obstacles[0], Obstacles[0], 1, 1, Obstacles, ObstaclesInfo, 1);
-    moveInCircle(Obstacles[0], Obstacles[0], 1, 1, 1, Obstacles, ObstaclesInfo, 1);
     moveBounceOnWalls(Obstacles[0], Obstacles[0], 1, 1, Obstacles, ObstaclesInfo, 1);
+    moveInCircle(Obstacles[0], Obstacles[0], 1, 1, 1, Obstacles, ObstaclesInfo, 1);
 
     SetCurrentDirectory(CURRENT_DIR_PATH);
 
@@ -120,7 +155,7 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
 
     if(!hFile)
         return;
-    
+
     string line;
     int i = 0;
     vector<string> objName, objInfo, objInfo2;
@@ -150,7 +185,7 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
 			ObstaclesInfo[i][O_MOVE] = strtodbl(trim(objInfo2[0]));
 			extra = ObstaclesInfo[i][O_RADIUS] = strtodbl(trim(objInfo2[1]));
 		} else{
-			ObstaclesInfo[i][O_MOVE] = strtodbl(trim(objInfo[4]));	
+			ObstaclesInfo[i][O_MOVE] = strtodbl(trim(objInfo[4]));
 		}
 
         while(rectanglesOverlap(playerPos, Obstacles[i])) {
@@ -165,14 +200,14 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
 			continue;
 		}
 
-        ObstaclesInfo[i][O_STEP] = strtodbl(trim(objInfo[5], " \t)"));			
+        ObstaclesInfo[i][O_STEP] = strtodbl(trim(objInfo[5], " \t)"));
 
 		i++;
     }
 }
 
-// Obstacles moving funcitons
-int moveUpAndDown(RECT &Rect, RECT border, int step, int id, RECT Obstacles[], double ObstaclesInfo[][100], int reset = 0){
+// Obstacles moving functions
+int moveUpAndDown(RECT &Rect, RECT border, int step, int id, RECT *Obstacles, double ObstaclesInfo[][100], int reset = 0){
     static double info[100];
     if(reset){
         fill_n(info, 100, 0);
@@ -219,7 +254,7 @@ int moveRightAndLeft(RECT &Rect, RECT border, int step, int id, RECT Obstacles[]
             Rect.right = border.right;
             Rect.left += border.right - Rect.right;
             info[id] = 1;
-        } else { 
+        } else {
             Rect.right -= step;
             Rect.left -= step;
         }
@@ -242,7 +277,7 @@ int moveRightAndLeft(RECT &Rect, RECT border, int step, int id, RECT Obstacles[]
     return 0;
 }
 
-int moveInCircle(RECT &Rect, RECT border, double step, double radius, int id, RECT Obstacles[], double ObstaclesInfo[][100], int reset = 0) { 
+int moveInCircle(RECT &Rect, RECT border, double step, double radius, int id, RECT Obstacles[], double ObstaclesInfo[][100], int reset = 0) {
     static double info[100][10] = {};
 
     if(reset == 1){
@@ -301,26 +336,26 @@ int moveInCircle(RECT &Rect, RECT border, double step, double radius, int id, RE
 			info[id][5] = !info[id][5];
 			// RL
 			if( prev.left >= Obstacles[i].right ) {
-			
-				Rect.right = Obstacles[i].right + w; 
+
+				Rect.right = Obstacles[i].right + w;
 				Rect.left = Obstacles[i].right;
 			} else
 			// BT
 			if( prev.top >= Obstacles[i].bottom ) {
-				
-				Rect.bottom = Obstacles[i].bottom + h; 
+
+				Rect.bottom = Obstacles[i].bottom + h;
 				Rect.top = Obstacles[i].bottom;
 			} else
 			// LR
 			if( prev.right <= Obstacles[i].left ) {
-				
-				Rect.left = Obstacles[i].left - w; 
+
+				Rect.left = Obstacles[i].left - w;
 				Rect.right = Obstacles[i].left;
 			} else
 			// TB
 			if( prev.bottom <= Obstacles[i].top ) {
-				
-				Rect.top = Obstacles[i].top - h; 
+
+				Rect.top = Obstacles[i].top - h;
 				Rect.bottom = Obstacles[i].top;
 			}
 			//break;
@@ -342,7 +377,7 @@ int moveBounceOnWalls(RECT &Rect, RECT border, int step, int id, RECT Obstacles[
         info[id][0] = 1;
         info[id][1] = 1;
         //info[id][2] = 0;
-    } 
+    }
     if(reset){
         fill_n(info, 100, 0);
         return 0;
@@ -387,25 +422,25 @@ int moveBounceOnWalls(RECT &Rect, RECT border, int step, int id, RECT Obstacles[
 			// RL
 			if( prev.left >= Obstacles[i].right ) {
 				info[id][0] = 1;
-				Rect.right = Obstacles[i].right + w; 
+				Rect.right = Obstacles[i].right + w;
 				Rect.left = Obstacles[i].right;
 			} else
 			// BT
 			if( prev.top >= Obstacles[i].bottom ) {
 				info[id][1] = 1;
-				Rect.bottom = Obstacles[i].bottom + h; 
+				Rect.bottom = Obstacles[i].bottom + h;
 				Rect.top = Obstacles[i].bottom;
 			} else
 			// LR
 			if( prev.right <= Obstacles[i].left ) {
 				info[id][0] = -1;
-				Rect.left = Obstacles[i].left - w; 
+				Rect.left = Obstacles[i].left - w;
 				Rect.right = Obstacles[i].left;
 			} else
 			// TB
 			if( prev.bottom <= Obstacles[i].top ) {
 				info[id][1] = -1;
-				Rect.top = Obstacles[i].top - h; 
+				Rect.top = Obstacles[i].top - h;
 				Rect.bottom = Obstacles[i].top;
 			}
 			//break;
@@ -442,7 +477,7 @@ void followThePlayer(RECT &Obstacle, RECT currPlayerPos, RECT gameBox, long step
 
     if (currPlayerPos.left < gameBox.left) {
         currPlayerPos.right += gameBox.left - currPlayerPos.left;
-        currPlayerPOs.left = gameBox.left; 
+        currPlayerPos.left = gameBox.left;
     }
 }
 
@@ -526,7 +561,7 @@ vector <string> splitString(const string& str, const char& ch) {
     return result;
 }
 
-string trim(const string& str, const string& whitespace = " \t")
+string trim(const string& str, const string& whitespace)
 {
     const auto strBegin = str.find_first_not_of(whitespace);
     if (strBegin == string::npos)
@@ -538,7 +573,7 @@ string trim(const string& str, const string& whitespace = " \t")
     return str.substr(strBegin, strRange);
 }
 
-double strtodbl(string String) { 
+double strtodbl(string String) {
 	return ::atof(String.c_str());
 }
 
@@ -564,3 +599,6 @@ int game_over(HWND hwnd, RECT &mainPlayerPos, RECT &obstacle, RECT playerPos){
     }
     return 0;
 }
+
+
+#endif
