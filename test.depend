@@ -1,0 +1,50 @@
+# depslib dependency file v1.0
+1626288969 source:c:\users\armin\desktop\test\main.cpp
+	"stdafx.h"
+	<iostream>
+
+1626285113 c:\users\armin\desktop\test\stdafx.h
+	<windows.h>
+	<stdlib.h>
+	<time.h>
+	<stdio.h>
+	<math.h>
+	<string>
+	<direct.h>
+	<vector>
+	<algorithm>
+	<fstream>
+	<sstream>
+	<CommCtrl.h>
+	"colision.h"
+	"functions.h"
+	"buttons.h"
+	"movement.h"
+	"files.h"
+	"game_play.h"
+
+1626284460 c:\users\armin\desktop\test\cursor.h
+	<iostream>
+
+1626285388 c:\users\armin\desktop\test\colision.h
+
+1626284949 c:\users\armin\desktop\test\functions.h
+	<iostream>
+
+1626284993 c:\users\armin\desktop\test\buttons.h
+	<iostream>
+
+1626285085 c:\users\armin\desktop\test\movement.h
+	<iostream>
+
+1626284420 c:\users\armin\desktop\test\keys.h
+	<iostream>
+
+1626288988 c:\users\armin\desktop\test\files.h
+	<iostream>
+
+1626288997 c:\users\armin\desktop\test\game_play.h
+
+1626284426 c:\users\armin\desktop\test\maker.h
+	<iostream>
+
