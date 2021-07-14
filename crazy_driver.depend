@@ -1,0 +1,21 @@
+# depslib dependency file v1.0
+1626204650 source:c:\users\armin\desktop\crazy_driver\main.cpp
+	<windows.h>
+	<tchar.h>
+	<iostream>
+	<string>
+	<stdlib.h>
+	<math.h>
+	<fstream>
+	<filesystem>
+	<unistd.h>
+	<dirent.h>
+	<direct.h>
+	<time.h>
+	"playgame.h"
+
+1626204578 c:\users\armin\desktop\crazy_driver\playgame.h
+	"helpers.h"
+
+1626197553 c:\users\armin\desktop\crazy_driver\helpers.h
+

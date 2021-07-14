@@ -1,13 +1,9 @@
-#ifndef _HELPERS_HPP_
-#define _HELPERS_HPP_
+#ifndef _HELPERS_H_
+#define _HELPERS_H_
 
 // buttons
 #define BTN_END_TEXT "End"
 #define BTN_END 100
-
-// Text messages
-#define LVL_TEXT "\n\n\n        Current Level: %d"
-#define NOD_TEXT "\n\n\nNumber of deaths: %     "
 
 #define GRACEFUL_MSG "You reach the end of the game, congrats!"
 
@@ -17,26 +13,33 @@
 #define O_STEP 2
 #define O_RADIUS 3 // radius
 
+#define DIR_NAME "Levels"
+
 TCHAR CURRENT_DIR_PATH[MAX_PATH] = {0};
 
 int GetRandomNumber(int, int);
+
 void PlayerMove(RECT&, RECT, int, int&);
 void wallPassed(RECT &, RECT, int, RECT);
+
 void generateGate(int, RECT &, int,  RECT);
-void generateObstacles(RECT , double, int, int, RECT);
+void generateObstacles(RECT Obstacles[] , double ObstaclesInfo[][100], int Level, int margins[], RECT playerPos);
+
 int moveUpAndDown(RECT &, RECT , int, int, RECT*, double ObstaclesInfo[][100], int);
 int moveRightAndLeft(RECT &, RECT, int, int, RECT*, double ObstaclesInfo[][100], int);
 int moveInCircle(RECT &, RECT, double, double, int, RECT*, double ObstaclesInfo[][100], int);
 int moveBounceOnWalls(RECT &, RECT, int, int, RECT*, double ObstaclesInfo[][100], int);
 void followThePlayer(RECT &, RECT, RECT, long);
+
 void CreateCustomEllipse(HDC, RECT);
 int rectanglesOverlap(RECT, RECT);
 bool outOfGameBox(RECT &, RECT, int, int);
+
 BOOL directoryExists(const std::string&);
 BOOL fileExists(LPCTSTR);
-vector <string> splitString(const string&, const char&);
-string trim(const string&, const string& whitespace = " \t");
+void getInfo(const string&, string&, double&, double&, double&, double&, double&, double&, double&);
 double strtodbl(string);
+
 int game_over(HWND, RECT &, RECT &, RECT);
 
 
@@ -50,24 +53,28 @@ int GetRandomNumber(int nLow, int nHigh)
 //Player moving functions
 void PlayerMove(RECT &curPostion, RECT gameBox, int step, int &key_ctrl){
     if (GetAsyncKeyState(VK_LEFT) && !outOfGameBox(curPostion, gameBox, 0, step)){
+        cout << "VK LEFT" << endl;
         curPostion.left -= step;
         curPostion.right -= step;
         key_ctrl = 1;
     }
 
     if (GetAsyncKeyState(VK_RIGHT) && !outOfGameBox(curPostion, gameBox, 1, step)){
+        cout << "VK RIGHT" << endl;
         curPostion.left += step;
         curPostion.right += step;
         key_ctrl = 2;
     }
 
     if (GetAsyncKeyState(VK_UP) && !outOfGameBox(curPostion, gameBox, 2, step)){
+        cout << "VK UP" << endl;
         curPostion.top -= step;
         curPostion.bottom -= step;
         key_ctrl = 3;
     }
 
     if (GetAsyncKeyState(VK_DOWN) && !outOfGameBox(curPostion, gameBox, 3, step)){
+        cout << "VK DOWN" << endl;
         curPostion.top += step;
         curPostion.bottom += step;
         key_ctrl = 4;
@@ -105,7 +112,6 @@ void wallPassed(RECT &currPosition, RECT Obstacle, int dir, RECT pos) {
 
 // Generating Obstacles
 void generateGate(int margin, RECT &Gate, int GateInfo[],  RECT GameBox){
-
     Gate.top = GetRandomNumber(margin, GameBox.bottom);
     Gate.left = GameBox.right - GateInfo[0];
     Gate.right = GameBox.right;
@@ -119,7 +125,6 @@ void generateGate(int margin, RECT &Gate, int GateInfo[],  RECT GameBox){
 
 void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Level, int margins[], RECT playerPos){
     RECT tempObstacle = {};
-
     for (int i = 0; i < 100; ++i){
         Obstacles[i] = tempObstacle;
         fill_n(ObstaclesInfo[i], 5, 0);
@@ -130,18 +135,18 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
     moveBounceOnWalls(Obstacles[0], Obstacles[0], 1, 1, Obstacles, ObstaclesInfo, 1);
     moveInCircle(Obstacles[0], Obstacles[0], 1, 1, 1, Obstacles, ObstaclesInfo, 1);
 
-    SetCurrentDirectory(CURRENT_DIR_PATH);
+    getcwd(CURRENT_DIR_PATH, MAX_PATH);
 
-    if(!directoryExists("LEVELS") || !fileExists("LEVELS/leve1.txt")){
-        _mkdir("LEVELS");
+    if(!opendir(DIR_NAME)){
+        cout << "DIRECTORY DOES NOT EXISTS " << endl;
+        _mkdir(DIR_NAME);
 
         HANDLE hFile;
 
         DWORD wmWritten;
+		char strData[] = "Rectangle(200,100,20,40,1,10)\r\nEllipse(150,150,50,50,2|30,5)\r";
 
-		char strData[] = "Rectangle (200,100,20,40,1,10)\r\nEllipse(150,150,50,50,2|30,5)\r\n";
-
-        hFile = CreateFile("LEVELS/level1.txt", GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        hFile = CreateFile("Levels/level1.txt", GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
         WriteFile(hFile, strData, (DWORD)(sizeof(strData)), &wmWritten, NULL);
 
@@ -149,43 +154,43 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
     }
 
     char filename[100];
-    sprintf_s(filename, "LEVELS/level%d.txt", Level);
-
+    sprintf_s(filename, "Levels/level%d.txt", Level);
     ifstream hFile(filename);
 
-    if(!hFile)
+    if(!hFile){
         return;
+    }
 
     string line;
     int i = 0;
-    vector<string> objName, objInfo, objInfo2;
     double extra = 0;
 
-    while(getline(hFile, line)){
+    string name;
+    double left, top, right, bottom, mv, radius, step;
 
-        objName = splitString(line, '(');
-
-        if(trim(objName[0]) == "Rectangle")
+    while (getline(hFile, line)) {
+        cout << "LINE " << line << " I: " << i << endl;
+        getInfo(line, name, left, top, right, bottom, mv, radius, step);
+        //cout << name << " " << left << " " << top << " " << right << " " << bottom << " " << mv << " " << radius << " " << step << endl;
+        if(name == "Rectangle")
             ObstaclesInfo[i][O_TYPE] = 1;
-        else if (trim(objName[0]) == "Ellipse")
+        else if (name == "Ellipse")
             ObstaclesInfo[i][O_TYPE] = 2;
-        else if (trim(objName[0]) == "Wall")
+        else if (name == "Wall")
             ObstaclesInfo[i][O_TYPE] = 3;
         else
             continue;
 
-        objInfo = splitString(objName[1], ',');
-        Obstacles[i].left = (long)(margins[0] + strtodbl(trim(objInfo[0])));
-        Obstacles[i].right = (long)(Obstacles[i].left + strtodbl(trim(objInfo[2])));
-		Obstacles[i].top = (long)(margins[2] + strtodbl(trim(objInfo[1])));
-		Obstacles[i].bottom = (long)(Obstacles[i].top + strtodbl(trim(objInfo[3])));
+        Obstacles[i].left = (long)(margins[0] + left);
+        Obstacles[i].right = (long)(Obstacles[i].left + right);
+		Obstacles[i].top = (long)(margins[2] + top);
+		Obstacles[i].bottom = (long)(Obstacles[i].top + bottom);
 
-        if(objInfo[4].find_first_of("|") != string::npos) {
-			objInfo2 = splitString(objInfo[4], '|');
-			ObstaclesInfo[i][O_MOVE] = strtodbl(trim(objInfo2[0]));
-			extra = ObstaclesInfo[i][O_RADIUS] = strtodbl(trim(objInfo2[1]));
-		} else{
-			ObstaclesInfo[i][O_MOVE] = strtodbl(trim(objInfo[4]));
+        if (radius != 0) {
+			ObstaclesInfo[i][O_MOVE] = mv;
+			extra = ObstaclesInfo[i][O_RADIUS] = radius;
+		} else {
+			ObstaclesInfo[i][O_MOVE] = mv;
 		}
 
         while(rectanglesOverlap(playerPos, Obstacles[i])) {
@@ -200,14 +205,16 @@ void generateObstacles(RECT Obstacles[], double ObstaclesInfo[100][100], int Lev
 			continue;
 		}
 
-        ObstaclesInfo[i][O_STEP] = strtodbl(trim(objInfo[5], " \t)"));
-
+        ObstaclesInfo[i][O_STEP] = step;
+        name = "";
+        left = top = right = bottom = mv = radius = step = 0;
 		i++;
+
     }
 }
 
 // Obstacles moving functions
-int moveUpAndDown(RECT &Rect, RECT border, int step, int id, RECT *Obstacles, double ObstaclesInfo[][100], int reset = 0){
+int moveUpAndDown(RECT &Rect, RECT border, int step, int id, RECT Obstacles[], double ObstaclesInfo[][100], int reset = 0){
     static double info[100];
     if(reset){
         fill_n(info, 100, 0);
@@ -379,7 +386,9 @@ int moveBounceOnWalls(RECT &Rect, RECT border, int step, int id, RECT Obstacles[
         //info[id][2] = 0;
     }
     if(reset){
-        fill_n(info, 100, 0);
+        for (int i = 100; i >= 0; --i){
+            fill_n(info[i], 5, 1);
+        }
         return 0;
     }
 
@@ -488,8 +497,10 @@ void CreateCustomEllipse(HDC hdc, RECT obstacle){
 
 // Check if rectangles overlapping with each other
 int rectanglesOverlap(RECT a, RECT b){
-    if(a.left >= b.right || a.right <= b.left || a.top >= b.bottom || a.bottom <= b.top)
+
+    if(a.left >= b.right || a.right <= b.left || a.top >= b.bottom || a.bottom <= b.top){
         return 0;
+    }
     return 1;
 }
 
@@ -537,51 +548,130 @@ BOOL fileExists(LPCTSTR path){
 }
 
 // String manipulation
-vector <string> splitString(const string& str, const char& ch) {
-    string next;
-    vector<string> result;
-
-    // For each character in the string
-    for (string::const_iterator it = str.begin(); it != str.end(); it++) {
-        // If we've hit the terminal character
-        if (*it == ch) {
-            // If we have some characters accumulated
-            if (!next.empty()) {
-                // Add them to the result vector
-                result.push_back(next);
-                next.clear();
-            }
-        } else {
-            // Accumulate the next character into the sequence
-            next += *it;
-        }
-    }
-    if (!next.empty())
-         result.push_back(next);
-    return result;
-}
-
-string trim(const string& str, const string& whitespace)
+void getInfo(const string& line, string &name, double& left, double& top, double& right, double& bottom, double& mv, double& radius, double& step)
 {
-    const auto strBegin = str.find_first_not_of(whitespace);
-    if (strBegin == string::npos)
-        return ""; // no content
+    auto currentIt = line.begin();
+    string tmp;
+    if (currentIt != line.end())
+    {
+        // Get name
+        name = "";
+        while(*currentIt != '(' && currentIt != line.end())
+        {
+            name += *currentIt;
+            currentIt++;
+        }
 
-    const auto strEnd = str.find_last_not_of(whitespace);
-    const auto strRange = strEnd - strBegin + 1;
+        currentIt++;
+        // Get left
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        left = std::stod(tmp);
+        tmp = "";
 
-    return str.substr(strBegin, strRange);
+        // Get top
+        currentIt++;
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        top = std::stod(tmp);
+        tmp = "";
+
+        // Get right
+        currentIt++;
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        right = std::stod(tmp);
+        tmp = "";
+
+        // Get bottom
+        currentIt++;
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        bottom = std::stod(tmp);
+        tmp = "";
+
+        // Check if it is wall
+        if (name == "Wall"){
+            currentIt++;
+            while(*currentIt != ')' && currentIt != line.end()){
+                tmp += *currentIt;
+                currentIt++;
+            }
+            mv = std::stod(tmp);
+            step = 0;
+            radius = 0;
+            tmp = "";
+            return;
+        }
+
+        // Check if radius exists
+        currentIt++;
+        if (line.find('|') != std::string::npos)
+        {
+            // Get move
+            while(*currentIt != '|' && currentIt != line.end())
+            {
+                tmp += *currentIt;
+                currentIt++;
+            }
+            mv = std::stod(tmp);
+            tmp = "";
+
+            // Get radius
+            currentIt++;
+            while(*currentIt != ',' && currentIt != line.end())
+            {
+                tmp += *currentIt;
+                currentIt++;
+            }
+            radius = std::stod(tmp);
+            tmp = "";
+
+        }
+        else
+        {
+            radius = 0;
+            // Get move
+            while(*currentIt != ',' && currentIt != line.end())
+            {
+                tmp += *currentIt;
+                currentIt++;
+            }
+            mv = std::stod(tmp);
+            tmp = "";
+        }
+
+        // Get step
+        currentIt++;
+        while(*currentIt != ')' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        step = std::stod(tmp);
+        tmp = "";
+
+    }
+    return;
 }
 
-double strtodbl(string String) {
-	return ::atof(String.c_str());
-}
 
 // Game flow
 int game_over(HWND hwnd, RECT &mainPlayerPos, RECT &obstacle, RECT playerPos){
     if (mainPlayerPos.right > obstacle.left && mainPlayerPos.left < obstacle.right && rectanglesOverlap(mainPlayerPos, obstacle)){
         KillTimer(hwnd, 1);
-
         MessageBox(hwnd, TEXT("Try Again?"), TEXT("Game Over"), MB_OK);
 
         SetTimer(hwnd, 1, 50, NULL);
