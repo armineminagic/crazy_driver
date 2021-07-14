@@ -6,21 +6,26 @@
 
 using namespace std;
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <windows.h>
 #include <tchar.h>
-#include <math.h>
-#include <vector>
-#include <fstream>
 
-#include <time.h>
+#include <iostream>
+#include <string>
+#include <stdlib.h>
+
+#include <math.h>
+#include <fstream>
+#include <filesystem>
+#include <unistd.h>
+#include <dirent.h>
 #include <direct.h>
 
-#include "playgame.hpp"
+#include <time.h>
+
+#include "playgame.h"
 
 #define WINDOW_WIDTH 840
-#define WINDOW_HEIGHT 480
+#define WINDOW_HEIGHT 450
 
 // #define BTN_BACK 101
 #define BTN_LOGIN 102
@@ -65,7 +70,7 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
     wincl.cbClsExtra = 0;                      /* No extra bytes after the window class */
     wincl.cbWndExtra = 0;                      /* structure or the window instance */
     /* Use Windows's default colour as the background of the window */
-    wincl.hbrBackground = (HBRUSH) (COLOR_WINDOW + 5);
+    wincl.hbrBackground = CreateSolidBrush(RGB(87, 131, 123));
 
     /* Register the window class, and if it fails quit the program */
     if (!RegisterClassEx (&wincl))
@@ -76,11 +81,28 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
     AdjustWindowRect( &rect, WS_OVERLAPPEDWINDOW, FALSE );
 
     /* The class is registered, let's create the program*/
+
+    // hwnd = CreateWindowA(
+    //     szClassName, 
+    //     "Crazy Driver", 
+    //     WS_CLIPCHILDREN|WS_OVERLAPPEDWINDOW&~WS_THICKFRAME&~WS_MAXIMIZEBOX, 
+    //     CW_USEDEFAULT, 
+    //     CW_USEDEFAULT, 
+    //     rect.right - rect.left,
+    //     rect.bottom - rect.top, 
+    //     NULL, 
+    //     NULL, 
+    //     hThisInstance, 
+    //     NULL
+    // );
+
+    if (!hwnd)
+        return -1;
     hwnd = CreateWindowEx (
            0,                   /* Extended possibilites for variation */
            szClassName,         /* Classname */
            _T("Crazy Driver"),       /* Title Text */
-           WS_OVERLAPPEDWINDOW, /* default window */ //  WS_CLIPCHILDREN|WS_OVERLAPPEDWINDOW&~WS_THICKFRAME&~WS_MAXIMIZEBOX, OVO PREGLEDATI :D
+           WS_CLIPCHILDREN|WS_OVERLAPPEDWINDOW&~WS_THICKFRAME&~WS_MAXIMIZEBOX, /* default window */ //  WS_CLIPCHILDREN|WS_OVERLAPPEDWINDOW&~WS_THICKFRAME&~WS_MAXIMIZEBOX, OVO PREGLEDATI :D
            CW_USEDEFAULT,       /* Windows decides the position */
            CW_USEDEFAULT,       /* where the window ends up on the screen */
            rect.right - rect.left,                 /* The programs width */
@@ -97,8 +119,10 @@ int WINAPI WinMain (HINSTANCE hThisInstance,
     /* Run the message loop. It will run until GetMessage() returns 0 */
     while (GetMessage (&messages, NULL, 0, 0))
     {
+        Sleep(2);
         /* Translate virtual-key messages into character messages */
         TranslateMessage(&messages);
+
         /* Send message to WindowProcedure */
         DispatchMessage(&messages);
     }
@@ -120,12 +144,14 @@ LRESULT CALLBACK WindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM
     static int id = 0; // USER_ID from database
 
     if(CONTROL_VARIABLE == 1) {
-        if (id == 0)
-        return DefWindowProc (hwnd, message, wParam, lParam);
+        //if (id == 0)
+         //   return DefWindowProc (hwnd, message, wParam, lParam);
         PlayGame(hwnd, message, wParam, lParam, CONTROL_VARIABLE/*, &db, id, level, nod */); //(Buttons: END)
 	} //else if (CONTROL_VARIABLE == 2) {
         //  ScoreBoard(hwnd, message, wParam, lParam, CONTROL_VARIABLE,db); (Buttons: BACK)
-    //} else
+    //}
+    else
+        PostQuitMessage(1);
         //  id = Login(hwnd, message, wParam, lParam, CONTROL_VARIABLE, db); (Buttons: LOG_IN, SCORE_BOARD)
 
     return DefWindowProc (hwnd, message, wParam, lParam);
