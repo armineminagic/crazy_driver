@@ -19,7 +19,7 @@ int GetRandomNumber(int nLow, int nHigh)
 }
 
 // splits the string an array based on the second argument as a delimitator
-vector <string> explode(const string& str, const char& ch) {
+vector <string> trim(const string& str, const char& ch) {
     string next;
     vector<string> result;
 

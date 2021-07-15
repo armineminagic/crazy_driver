@@ -2,7 +2,7 @@
 #include <iostream>
 
 LRESULT CALLBACK WndProc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam );
-
+sqlite3* db;
 LPINITCOMMONCONTROLSEX lpInitCtrls;
 HBITMAP FrogImg, FrogImgMask;
 
@@ -24,7 +24,7 @@ int WINAPI WinMain (HINSTANCE hInstance,
     wndClass.hIcon = LoadIcon (NULL, IDI_APPLICATION);
     wndClass.hIconSm = LoadIcon (NULL, IDI_APPLICATION);
     wndClass.hCursor = LoadCursor (NULL, IDC_ARROW);
-    wndClass.hbrBackground = ( HBRUSH )( COLOR_WINDOW + 1 );
+    wndClass.hbrBackground = CreateSolidBrush(RGB(57, 162, 219));
     wndClass.lpszMenuName = NULL;
     wndClass.lpszClassName = "Crazy Box";
 
@@ -64,19 +64,17 @@ int WINAPI WinMain (HINSTANCE hInstance,
         }
     }
 
-    //cleanup and shutdown
     return static_cast<int>( msg.wParam );
 }
 
 LRESULT CALLBACK WndProc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
 	static int OPTION = 0;
-
+    string username, password;
 	if(OPTION == 1) {
-	    GamePlay(hwnd, message, wParam, lParam, OPTION);
-	} else
-	{
-        Login(hwnd, message, wParam, lParam, OPTION/*, db*/);
+	    GamePlay(hwnd, message, wParam, lParam, OPTION, username);
+	} else {
+        Login(hwnd, message, wParam, lParam, OPTION, username, password);
 	}
 	return DefWindowProc (hwnd, message, wParam, lParam);
 }

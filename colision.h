@@ -86,11 +86,11 @@ void checkWall(RECT &r, RECT obstacle, int d, RECT p) {
 int game_over(HWND hwnd, RECT &r1, RECT &obstacol, RECT DefPos) {
     // cout << "gameover se koristi " << endl;
 	if(r1.right > obstacol.left && r1.left < obstacol.right && do_rectangles_intersect(r1, obstacol)){
-
+		
 		KillTimer(hwnd,1); // stop the action
 
 		MessageBox(hwnd, TEXT(LOSE_TXT), TEXT(LOSE_TXT_TITLE), MB_OK);
-
+		
 		SetTimer(hwnd,1,UPDATE_RATE, NULL); 		// start the action
 
 		// we place the player to the start position
