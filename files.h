@@ -2,20 +2,16 @@
 #include <iostream>
 // clean the tmp files
 void CleanFiles(int onlyProgress = 0) {
-    cout << "CleanFiles se koristi" << endl;
 	// we make sure we are in the right folder
 	SetCurrentDirectory(DEFAULT_DIR_PATH);
 
-	if(onlyProgress)
+	if(onlyProgress){
 		DeleteFile("info.dat");
-	else
-		DeleteFile("CO_LEVELS/tmp.txt");
-
+	}
 }
 
 // save the progress of the gameplay
 BOOL SaveProgress(HWND hwnd, int Level, int Deaths) {
-    cout << "SaveProgress se koristi" << endl;
 	// we make sure we are in the right folder
 	SetCurrentDirectory(DEFAULT_DIR_PATH);
 
@@ -63,14 +59,15 @@ BOOL SaveProgress(HWND hwnd, int Level, int Deaths) {
 
 // grab the saved progress
 void GetSavedProgress( int &Level, int &Deaths) {
-    cout << "GEtsaveprogress se koristi" << endl;
 	// we make sure we are in the right folder
 	SetCurrentDirectory(DEFAULT_DIR_PATH);
 	// we read the level file
 	ifstream hFile("info.dat");
 
-	if(!hFile)
+	if(!hFile){
+		cout << "info.dat does not exists" << endl;
 		return;
+	}
 
 	vector <string> txt;
 	string line;
@@ -78,7 +75,7 @@ void GetSavedProgress( int &Level, int &Deaths) {
 	// read the lines
 	while(getline(hFile, line)){
 		if(line.find_first_of("|") != string::npos) {
-			txt = explode(line, '|');
+			txt = trim(line, '|');
 			Level = (int)strtodbl(txt[0]);
 			Deaths = (int)strtodbl(txt[1]);
 			break;
@@ -91,7 +88,6 @@ void GetSavedProgress( int &Level, int &Deaths) {
 // check if dir exists
 bool dirExists(const std::string& dirName_in)
 {
-    cout << "DirExists se koristi" << endl;
   DWORD ftyp = GetFileAttributesA(dirName_in.c_str());
   if (ftyp == INVALID_FILE_ATTRIBUTES)
     return false;  //something is wrong with your path!
@@ -102,20 +98,18 @@ bool dirExists(const std::string& dirName_in)
   return false;    // this is not a directory!
 }
 
-// checks if a file exists
-BOOL fileExists(LPCTSTR szPath)
+
+BOOL FileExists(LPCTSTR szPath)
 {
-    cout << "Fileexists se koristi" << endl;
   DWORD dwAttrib = GetFileAttributes(szPath);
 
-  return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+  return (dwAttrib != INVALID_FILE_ATTRIBUTES && 
          !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
 // generate obstacles
 
 void generate_obstacles(RECT obstacle[], double obstaclesInfo[100][100], int Level, int offset[], RECT DefPos) {
-    cout << "Generate_Obstacles se koristi" << endl;
 	// we first clear the obstacles
 	RECT a = {};
 	for(int i = 0; i < 100; i++) {
@@ -134,16 +128,16 @@ void generate_obstacles(RECT obstacle[], double obstaclesInfo[100][100], int Lev
 	// we make sure we are in the right folder
 	SetCurrentDirectory(DEFAULT_DIR_PATH);
 
-	if(!dirExists("CO_LEVELS") || !fileExists("CO_LEVELS/level1.txt")) {
+	if(!opendir("LEVELS")) {
 		// if we have no leves or no level1
-		_mkdir("CO_LEVELS");
+		_mkdir("LEVELS");
 		HANDLE hFile;
 
 		DWORD wmWritten;
 
-		char strData[] = "Rectangle (200,100,20,40,1,10)\r\nEllipse(150,150,50,50,2|30,5)\r\n";
+		char strData[] = "Rectangle (200,250,20,40,1,10)\r\nEllipse(150,150,50,50,2|30,5)\r\n";
 
-		hFile = CreateFile("CO_LEVELS/level1.txt",GENERIC_READ|GENERIC_WRITE,
+		hFile = CreateFile("LEVELS/level1.txt",GENERIC_READ|GENERIC_WRITE,
 			FILE_SHARE_READ,NULL,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
 
 		WriteFile(hFile,strData,(DWORD)(sizeof(strData)),&wmWritten,NULL);
@@ -153,8 +147,8 @@ void generate_obstacles(RECT obstacle[], double obstaclesInfo[100][100], int Lev
 	}
 
 	char filename[100];
-	sprintf_s(filename, "CO_LEVELS/level%d.txt", Level);
-
+	sprintf_s(filename, "LEVELS/level%d.txt", Level);
+	cout << filename << endl;
 	// we read the level file
 	ifstream hFile(filename);
 
@@ -169,9 +163,7 @@ void generate_obstacles(RECT obstacle[], double obstaclesInfo[100][100], int Lev
 
 	// read the lines
 	while(getline(hFile, line)){
-
-		std::cout << line << endl;
-		objName = explode(line, '(');
+		objName = trim(line, '(');
 
 		if(trim(objName[0]) == "Rectangle")
 			obstaclesInfo[i][CO_TYPE] = 1;
@@ -182,33 +174,26 @@ void generate_obstacles(RECT obstacle[], double obstaclesInfo[100][100], int Lev
 		else
 			continue;
 
-
-		objInfo = explode(objName[1], ',');
+		objInfo = trim(objName[1], ',');
 		obstacle[i].left = (long)(offset[0] + strtodbl(trim(objInfo[0])));
-		cout << "OBJ INFO left: "  << objInfo[0] << " TOP " << objInfo[1]<< endl;
 		obstacle[i].top = (long)(offset[2] + strtodbl(trim(objInfo[1])));
 		obstacle[i].right = (long)(obstacle[i].left + strtodbl(trim(objInfo[2])));
 		obstacle[i].bottom = (long)(obstacle[i].top + strtodbl(trim(objInfo[3])));
 
-
-
-		if(objInfo[4].find_first_of("|") != string::npos) { // if it's a circle get the radius
-			objInfo2 = explode(objInfo[4], '|');
+		if(objInfo[4].find_first_of("|") != string::npos) {
+			objInfo2 = trim(objInfo[4], '|');
 			obstaclesInfo[i][CO_MOVE] = strtodbl(trim(objInfo2[0]));
 			extra = obstaclesInfo[i][CO_RADIUS] = strtodbl(trim(objInfo2[1]));
 		} else{
 			obstaclesInfo[i][CO_MOVE] = strtodbl(trim(objInfo[4]));
 		}
 
-
-		// check if the rectangles ovelap when drown we don't want that
 		while(do_rectangles_intersect(DefPos, obstacle[i])) {
 			obstacle[i].left += (long)(45 + extra);
 			obstacle[i].right += (long)(45 + extra);
 
 		}
 
-		// if it's a wall we have no movement therefor the step is not required
 		if(obstaclesInfo[i][CO_TYPE] == 3) {
 			obstaclesInfo[i][CO_STEP] = 0;
 			i++;
