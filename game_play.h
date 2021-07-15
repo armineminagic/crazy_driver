@@ -51,7 +51,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 	switch (message)
 	{
 	case WM_NCCREATE : {
-		GetSavedProgress(OldLevel, OldDeaths);
+		GetSavedGame(OldLevel, OldDeaths);
 		break;
 	}
 	case WM_CREATE:
@@ -117,7 +117,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 		DefPos.bottom = (client.top + client.bottom)/2 + RectHeight;
 
 		// add the gate
-		generateGate(offset[2], Gate, Container, GateInfo);
+		makeGate(offset[2], Gate, Container, GateInfo);
 
 
 		// we keep the original pos in DefPos
@@ -125,7 +125,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 
 
 		// generate the obstacles
-		generate_obstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
+		makeObstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
 
 		// add the timer
 		SetTimer(hwnd,1,UPDATE_RATE, NULL);
@@ -171,13 +171,13 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 					FillRect(hdcBackBuffer, &obstacles[i], color[3]);
 				else if(obstaclesInfo[i][CO_TYPE] == 2) { // Ellipse
 					SelectObject(hdcBackBuffer, color[4]);
-					My_Ellipse(hdcBackBuffer, obstacles[i]);
+					createCustomEllipse(hdcBackBuffer, obstacles[i]);
 				} else if(obstaclesInfo[i][CO_TYPE] == 3) { // Wall
 					if(obstaclesInfo[i][CO_MOVE] == 1) {  // we interpret it as type
 						FillRect(hdcBackBuffer, &obstacles[i], color[5]);
 					} else if(obstaclesInfo[i][CO_MOVE] == 2) {
 						SelectObject(hdcBackBuffer, color[5]);
-						My_Ellipse(hdcBackBuffer, obstacles[i]);
+						createCustomEllipse(hdcBackBuffer, obstacles[i]);
 					}
 				}
 
@@ -194,7 +194,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 			for(int i = 0; i < sizeof(obstacles)/sizeof(obstacles[0]); i++) {
 				if(obstaclesInfo[i][CO_TYPE] != 3 && game_over(hwnd, r1, obstacles[i], DefPos)){
 					// generate the obstacles
-					generate_obstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
+					makeObstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
 					Deaths++;
 					break;
 				}
@@ -219,7 +219,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 		// the moves of the player
 		prevState = r1;
 
-		OBJMove(r1, Container, move, ok);
+		PlayerMove(r1, Container, move, ok);
 
 		// we must but check the walls
 		for(int i = 0; i < sizeof(obstacles)/sizeof(obstacles[0]); i++) {
@@ -233,7 +233,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 			UpdateWindow(hwnd);
 		}
 
-		if(r1.right > Gate.left && do_rectangles_intersect(Gate,r1)) {
+		if(r1.right > Gate.left && rectanglesOverlap(Gate,r1)) {
 			KillTimer(hwnd,1); // stop the action
 
 			MessageBox(hwnd, TEXT(WIN_TXT), TEXT(WIN_TXT_TITLE), MB_OK);
@@ -243,7 +243,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 			ifstream file; file.open(tmp, std::ifstream::out);
         	if(file.good()) {
 				// add the gate
-				generateGate(offset[2], Gate, Container, GateInfo);
+				makeGate(offset[2], Gate, Container, GateInfo);
 
 				SetTimer(hwnd,1,UPDATE_RATE, NULL);
 
@@ -251,7 +251,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 				Level++;
 
 				// generate the obstacles
-				generate_obstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
+				makeObstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
 			} else {
 				r1.left = 0;
 				r1.bottom = 0;
@@ -337,7 +337,7 @@ int GamePlay(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, int &OPTION,
 					Level = OldLevel;
 					TheEnd = 0;
 					EnableWindow(BTN[3], TRUE);
-					generate_obstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
+					makeObstacles(obstacles, obstaclesInfo, Level, offset, DefPos);
 				}
 				SetTimer(hwnd,1,UPDATE_RATE, NULL);
 				break;

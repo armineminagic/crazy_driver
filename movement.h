@@ -1,7 +1,3 @@
-// functions related to updating the objects coordinates
-
-using namespace std;
-#include <iostream>
 // moves up and down the object
 int moveUpAndDown(RECT &r, RECT limit, int step, int id, RECT obstacles[], double obstaclesInfo[][100], int reset = 0) {
 	static double info[100];
@@ -33,7 +29,7 @@ int moveUpAndDown(RECT &r, RECT limit, int step, int id, RECT obstacles[], doubl
 
 	// check if it collides with any wall
 	for(int i = 0; i < 100; i++)
-		if(obstaclesInfo[i][CO_TYPE] == 3 && do_rectangles_intersect(r, obstacles[i])) {
+		if(obstaclesInfo[i][CO_TYPE] == 3 && rectanglesOverlap(r, obstacles[i])) {
 			if(!info[id]) {
 				r.top = obstacles[i].top - (r.bottom - r.top);
 				r.bottom = obstacles[i].top;
@@ -78,7 +74,7 @@ int moveLeftAndRight(RECT &r, RECT limit, int step, int id, RECT obstacles[], do
 	}
 	// check if it collides with any wall
 	for(int i = 0; i < 100; i++)
-		if(obstaclesInfo[i][CO_TYPE] == 3 && do_rectangles_intersect(r, obstacles[i])) {
+		if(obstaclesInfo[i][CO_TYPE] == 3 && rectanglesOverlap(r, obstacles[i])) {
 			if(!info[id]) {
 				r.left = obstacles[i].left - (r.right - r.left);
 				r.right = obstacles[i].left;
@@ -150,7 +146,7 @@ int moveInCircle(RECT &r, RECT limit, double step, double radius, int id, RECT o
 	int h = r.bottom - r.top, w = r.right - r.left;
 	// check if it collides with any wall
 	for(int i = 0; i < 100; i++)
-		if(obstaclesInfo[i][CO_TYPE] == 3 && do_rectangles_intersect(r, obstacles[i])) {
+		if(obstaclesInfo[i][CO_TYPE] == 3 && rectanglesOverlap(r, obstacles[i])) {
 			info[id][5] = !info[id][5];
 			// RL
 			if( prev.left >= obstacles[i].right ) {
@@ -240,7 +236,7 @@ int moveBounceOnWalls(RECT &r, RECT limit, int step, int id, RECT obstacles[], d
 
 	// check if it collides with any wall
 	for(int i = 0; i < 100; i++)
-		if(obstaclesInfo[i][CO_TYPE] == 3 && do_rectangles_intersect(r, obstacles[i])) {
+		if(obstaclesInfo[i][CO_TYPE] == 3 && rectanglesOverlap(r, obstacles[i])) {
 			// RL
 			if( prev.left >= obstacles[i].right ) {
 				info[id][0] = 1;
@@ -305,8 +301,8 @@ void moveFollower(RECT &r, RECT destination, RECT limit, int step) {
 
 
 // handeles the movement of the player
-void OBJMove(RECT &r1, RECT Container, int move, int &ok) {
- 		if(GetAsyncKeyState(VK_LEFT) && !outOfContainer(r1,Container, 0, move)) {
+void PlayerMove(RECT &r1, RECT Container, int move, int &ok) {
+ 		if(GetAsyncKeyState(VK_LEFT) && !outOfGameBox(r1,Container, 0, move)) {
 
 			r1.left -= move;
 			r1.right -= move;
@@ -314,20 +310,20 @@ void OBJMove(RECT &r1, RECT Container, int move, int &ok) {
 		}
 
 
-		if(GetAsyncKeyState(VK_RIGHT) && !outOfContainer(r1,Container, 1, move)) {
+		if(GetAsyncKeyState(VK_RIGHT) && !outOfGameBox(r1,Container, 1, move)) {
 			r1.left += move;
 			r1.right += move;
 			ok = 2;
 		}
 
-		if(GetAsyncKeyState(VK_UP) && !outOfContainer(r1,Container, 2, move)) {
+		if(GetAsyncKeyState(VK_UP) && !outOfGameBox(r1,Container, 2, move)) {
 			r1.top -= move;
 			r1.bottom -= move;
 			ok = 3;
 		}
 
 
-		if(GetAsyncKeyState(VK_DOWN) && !outOfContainer(r1,Container, 3, move)) {
+		if(GetAsyncKeyState(VK_DOWN) && !outOfGameBox(r1,Container, 3, move)) {
 			r1.top += move;
 			r1.bottom += move;
 			ok = 4;

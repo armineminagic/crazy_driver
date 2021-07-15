@@ -1,9 +1,5 @@
-// function related to colision of files
-//using namespace std;
-
 // checks if the next move is outside of the container
-bool outOfContainer(RECT &r1, RECT Container, int direction, int move) {
-    //cout << "outOfContainer se koristi " << endl;
+bool outOfGameBox(RECT &r1, RECT Container, int direction, int move) {
 	// left
 	if(direction == 0 && (r1.left - move < Container.left)){
 		r1.right = Container.left + (r1.right - r1.left);
@@ -37,7 +33,7 @@ bool outOfContainer(RECT &r1, RECT Container, int direction, int move) {
 
 
 // Returns 1 if the rectangles overlap, 0 otherwise
-int do_rectangles_intersect(RECT a, RECT b) {
+int rectanglesOverlap(RECT a, RECT b) {
 
 	if (a.left >= b.right || a.right <= b.left ||
     a.top >= b.bottom || a.bottom <= b.top)
@@ -49,8 +45,8 @@ int do_rectangles_intersect(RECT a, RECT b) {
 // makes sure that the player doesn't pass the wall
 void checkWall(RECT &r, RECT obstacle, int d, RECT p) {
 
-	if(do_rectangles_intersect(r, obstacle)){
-		// fix for diagonal movement(it took way more longer then it should to figure it out :( )
+	if(rectanglesOverlap(r, obstacle)){
+		
 		if((d == 3 || d == 2) && (p.right <= obstacle.left))
 			d = 1;
 
@@ -84,20 +80,18 @@ void checkWall(RECT &r, RECT obstacle, int d, RECT p) {
 
 // game over
 int game_over(HWND hwnd, RECT &r1, RECT &obstacol, RECT DefPos) {
-    // cout << "gameover se koristi " << endl;
-	if(r1.right > obstacol.left && r1.left < obstacol.right && do_rectangles_intersect(r1, obstacol)){
+
+	if(r1.right > obstacol.left && r1.left < obstacol.right && rectanglesOverlap(r1, obstacol)){
 		
-		KillTimer(hwnd,1); // stop the action
+		KillTimer(hwnd,1); 
 
 		MessageBox(hwnd, TEXT(LOSE_TXT), TEXT(LOSE_TXT_TITLE), MB_OK);
 		
-		SetTimer(hwnd,1,UPDATE_RATE, NULL); 		// start the action
+		SetTimer(hwnd,1,UPDATE_RATE, NULL);
 
-		// we place the player to the start position
 		r1 = DefPos;
-		// if they happen to collide on the start position move the obstacle out of the screen
-		// till it's position is set back to default
-		while(do_rectangles_intersect(DefPos, obstacol)) {
+		
+		while(rectanglesOverlap(DefPos, obstacol)) {
 			obstacol.left -= 4500;
 			obstacol.right -= 4500;
 

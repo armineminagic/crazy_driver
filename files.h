@@ -1,6 +1,5 @@
-// functions related to file handling
-#include <iostream>
-// clean the tmp files
+// File management
+
 void CleanFiles(int onlyProgress = 0) {
 	// we make sure we are in the right folder
 	SetCurrentDirectory(DEFAULT_DIR_PATH);
@@ -29,16 +28,11 @@ BOOL SaveProgress(HWND hwnd, int Level, int Deaths) {
 		hFile = CreateFile(szFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
                                            FILE_ATTRIBUTE_NORMAL, NULL);
 
-
-	// Write contents of text output box to this file
-	// Double check that file was created
 	if(hFile != INVALID_HANDLE_VALUE) {
 
 		TextLength = pszText.size();
 
-		// Do nothing if container is empty
 		if(TextLength > 0) {
-
 			DWORD dwWritten;
 			if(!WriteFile(hFile, pszText.c_str(), TextLength, &dwWritten, NULL))
 				MessageBox(hwnd,TEXT(MSG_ERROR),TEXT(MSG_ERROR),MB_OK);
@@ -57,11 +51,10 @@ BOOL SaveProgress(HWND hwnd, int Level, int Deaths) {
 
 }
 
-// grab the saved progress
-void GetSavedProgress( int &Level, int &Deaths) {
-	// we make sure we are in the right folder
+// Get saved game
+void GetSavedGame( int &Level, int &Deaths) {
 	SetCurrentDirectory(DEFAULT_DIR_PATH);
-	// we read the level file
+
 	ifstream hFile("info.dat");
 
 	if(!hFile){
@@ -72,7 +65,6 @@ void GetSavedProgress( int &Level, int &Deaths) {
 	vector <string> txt;
 	string line;
 
-	// read the lines
 	while(getline(hFile, line)){
 		if(line.find_first_of("|") != string::npos) {
 			txt = trim(line, '|');
@@ -84,21 +76,6 @@ void GetSavedProgress( int &Level, int &Deaths) {
 	}
 }
 
-
-// check if dir exists
-bool dirExists(const std::string& dirName_in)
-{
-  DWORD ftyp = GetFileAttributesA(dirName_in.c_str());
-  if (ftyp == INVALID_FILE_ATTRIBUTES)
-    return false;  //something is wrong with your path!
-
-  if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
-    return true;   // this is a directory!
-
-  return false;    // this is not a directory!
-}
-
-
 BOOL FileExists(LPCTSTR szPath)
 {
   DWORD dwAttrib = GetFileAttributes(szPath);
@@ -108,34 +85,29 @@ BOOL FileExists(LPCTSTR szPath)
 }
 
 // generate obstacles
-
-void generate_obstacles(RECT obstacle[], double obstaclesInfo[100][100], int Level, int offset[], RECT DefPos) {
-	// we first clear the obstacles
+void makeObstacles(RECT obstacles[], double obstaclesInfo[100][100], int Level, int offset[], RECT DefPos) {
 	RECT a = {};
 	for(int i = 0; i < 100; i++) {
-		obstacle[i] = a;
+		obstacles[i] = a;
 		fill_n(obstaclesInfo[i], 5, 0);
 	}
-	// we also clear the static arrays in the move functions
-	moveInCircle(obstacle[0], obstacle[0], 1, 1, 1, obstacle, obstaclesInfo, 1); // we use some dump values who are not used anyway
-
-	moveUpAndDown(obstacle[0], obstacle[0], 1, 1, obstacle, obstaclesInfo, 1);
-	moveLeftAndRight(obstacle[0], obstacle[0], 1, 1, obstacle, obstaclesInfo, 1);
-	moveBounceOnWalls(obstacle[0], obstacle[0], 1, 1, obstacle, obstaclesInfo, 1);
-
+	
+	moveInCircle(obstacles[0], obstacles[0], 1, 1, 1, obstacles, obstaclesInfo, 1);
+	moveUpAndDown(obstacles[0], obstacles[0], 1, 1, obstacles, obstaclesInfo, 1);
+	moveLeftAndRight(obstacles[0], obstacles[0], 1, 1, obstacles, obstaclesInfo, 1);
+	moveBounceOnWalls(obstacles[0], obstacles[0], 1, 1, obstacles, obstaclesInfo, 1);
 
 
-	// we make sure we are in the right folder
 	SetCurrentDirectory(DEFAULT_DIR_PATH);
 
 	if(!opendir("LEVELS")) {
-		// if we have no leves or no level1
+		
 		_mkdir("LEVELS");
 		HANDLE hFile;
 
 		DWORD wmWritten;
 
-		char strData[] = "Rectangle (200,250,20,40,1,10)\r\nEllipse(150,150,50,50,2|30,5)\r\n";
+		char strData[] = "Rectangle (150,200,30,18,1,10)\r\nEllipse(150,150,50,50,2|30,5)\r\n";
 
 		hFile = CreateFile("LEVELS/level1.txt",GENERIC_READ|GENERIC_WRITE,
 			FILE_SHARE_READ,NULL,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
@@ -149,62 +121,176 @@ void generate_obstacles(RECT obstacle[], double obstaclesInfo[100][100], int Lev
 	char filename[100];
 	sprintf_s(filename, "LEVELS/level%d.txt", Level);
 	cout << filename << endl;
-	// we read the level file
+
 	ifstream hFile(filename);
 
 	if(!hFile)
 		return;
 
-
 	string line;
 	int i = 0;
-	vector <string> objName, objInfo, objInfo2;
+	string name = "";
+	double left, top, right, bottom, mv, radius, step;
 	double extra = 0;
 
-	// read the lines
 	while(getline(hFile, line)){
 		objName = trim(line, '(');
+		getInfo(line, name, left, top, right, bottom, mv, radius, step);
+		
+		if(name == "Rectangle")
+            obstaclesInfo[i][CO_TYPE] = 1;
+        else if (name == "Ellipse")
+            obstaclesInfo[i][CO_TYPE] = 2;
+        else if (name == "Wall")
+            obstaclesInfo[i][CO_TYPE] = 3;
+        else
+            continue;
 
-		if(trim(objName[0]) == "Rectangle")
-			obstaclesInfo[i][CO_TYPE] = 1;
-		else if(trim(objName[0]) == "Ellipse")
-			obstaclesInfo[i][CO_TYPE] = 2;
-		else if(trim(objName[0]) == "Wall")
-			obstaclesInfo[i][CO_TYPE] = 3;
-		else
-			continue;
+        obstacles[i].left = (long)(offset[0] + left);
+        obstacles[i].right = (long)(obstacles[i].left + right);
+		obstacles[i].top = (long)(offset[2] + top);
+		obstacles[i].bottom = (long)(obstacles[i].top + bottom);
 
-		objInfo = trim(objName[1], ',');
-		obstacle[i].left = (long)(offset[0] + strtodbl(trim(objInfo[0])));
-		obstacle[i].top = (long)(offset[2] + strtodbl(trim(objInfo[1])));
-		obstacle[i].right = (long)(obstacle[i].left + strtodbl(trim(objInfo[2])));
-		obstacle[i].bottom = (long)(obstacle[i].top + strtodbl(trim(objInfo[3])));
-
-		if(objInfo[4].find_first_of("|") != string::npos) {
-			objInfo2 = trim(objInfo[4], '|');
-			obstaclesInfo[i][CO_MOVE] = strtodbl(trim(objInfo2[0]));
-			extra = obstaclesInfo[i][CO_RADIUS] = strtodbl(trim(objInfo2[1]));
-		} else{
-			obstaclesInfo[i][CO_MOVE] = strtodbl(trim(objInfo[4]));
+        if (radius != 0) {
+			obstaclesInfo[i][O_MOVE] = mv;
+			extra = obstaclesInfo[i][O_RADIUS] = radius;
+		} else {
+			obstaclesInfo[i][O_MOVE] = mv;
 		}
 
-		while(do_rectangles_intersect(DefPos, obstacle[i])) {
-			obstacle[i].left += (long)(45 + extra);
-			obstacle[i].right += (long)(45 + extra);
-
+        while(rectanglesOverlap(playerPos, obstacles[i])) {
+			obstacles[i].left += (long)(45 + extra);
+			obstacles[i].right += (long)(45 + extra);
 		}
-
-		if(obstaclesInfo[i][CO_TYPE] == 3) {
-			obstaclesInfo[i][CO_STEP] = 0;
-			i++;
+        if(obstaclesInfo[i][O_TYPE] == 3) {
+			obstaclesInfo[i][O_STEP] = 0;
+			++i;
 			continue;
 		}
 
-		obstaclesInfo[i][CO_STEP] = strtodbl(trim(objInfo[5], " \t)")); // the step
-
+        obstaclesInfo[i][O_STEP] = step;
+        name = "";
+        left = top = right = bottom = mv = radius = step = 0;
 		i++;
-
 	}
 
+}
 
+void getInfo(const string& line, string &name, double& left, double& top, double& right, double& bottom, double& mv, double& radius, double& step)
+{
+    auto currentIt = line.begin();
+    string tmp;
+    if (currentIt != line.end())
+    {
+        // Get name
+        name = "";
+        while(*currentIt != '(' && currentIt != line.end())
+        {
+            name += *currentIt;
+            currentIt++;
+        }
+
+        currentIt++;
+        // Get left
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        left = std::stod(tmp);
+        tmp = "";
+
+        // Get top
+        currentIt++;
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        top = std::stod(tmp);
+        tmp = "";
+
+        // Get right
+        currentIt++;
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        right = std::stod(tmp);
+        tmp = "";
+
+        // Get bottom
+        currentIt++;
+        while(*currentIt != ',' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        bottom = std::stod(tmp);
+        tmp = "";
+
+        // Check if it is wall
+        if (name == "Wall"){
+            currentIt++;
+            while(*currentIt != ')' && currentIt != line.end()){
+                tmp += *currentIt;
+                currentIt++;
+            }
+            mv = std::stod(tmp);
+            step = 0;
+            radius = 0;
+            tmp = "";
+            return;
+        }
+
+        // Check if radius exists
+        currentIt++;
+        if (line.find('|') != std::string::npos)
+        {
+            // Get move
+            while(*currentIt != '|' && currentIt != line.end())
+            {
+                tmp += *currentIt;
+                currentIt++;
+            }
+            mv = std::stod(tmp);
+            tmp = "";
+
+            // Get radius
+            currentIt++;
+            while(*currentIt != ',' && currentIt != line.end())
+            {
+                tmp += *currentIt;
+                currentIt++;
+            }
+            radius = std::stod(tmp);
+            tmp = "";
+
+        }
+        else
+        {
+            radius = 0;
+            // Get move
+            while(*currentIt != ',' && currentIt != line.end())
+            {
+                tmp += *currentIt;
+                currentIt++;
+            }
+            mv = std::stod(tmp);
+            tmp = "";
+        }
+
+        // Get step
+        currentIt++;
+        while(*currentIt != ')' && currentIt != line.end())
+        {
+            tmp += *currentIt;
+            currentIt++;
+        }
+        step = std::stod(tmp);
+        tmp = "";
+
+    }
+    return;
 }
